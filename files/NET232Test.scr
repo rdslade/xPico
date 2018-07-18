@@ -1,0 +1,1588 @@
+;
+; Script file to test a NET232/jr/DIRECT/TTLETH and load custom
+; configuration and/or firmware.
+;
+;           EDL   V1.?  Original
+; 02/08/13  EDL   V2.0  Updated for NETDIRECT, NET232-GDC4 and script version
+;                       tracking. Made it easier to have multiple production
+;                       stations.
+; 03/14/13  EDL   V2.1  Masimo default baud rate of 115200
+; 02/06/14  EDL   V2.2  Update for XPort-05.
+; 06/26/14  EDL   V2.3  Update for NET232+
+; 10/08/14  EDL   V2.4  Update for MB webm V1.0.0.1, NET232+ MB,
+;                       Masimo NETDIRECT, new versions on label
+; 02/05/15  EDL   V2.5  Update for MB webm V1.0.0.2, NET232+ no DSR test
+; 04/06/15  EDL   V2.6  Lighthouse NET232 FW to STMB, Organic Response
+; 10/23/15  EDL   V2.7  Fix NET232(jr) configurable pins not being set
+; 11/23/15  EDL   V2.8  Update for GC-ND-POE-DCE-ATT and -TB-ATT
+; 05/25/16  EDL   V2.9  Update for NET232+ V6.8.0.7/1.9.0.2
+; 09/22/16  EDL   V2.10 Update for NetDirect-MB webm V1.1.0.3
+; 11/17/16  EDL   V2.11 Update for NET232-PLUS-RJ45-LH and -OEM-MBST
+; 04/18/17  EDL   V2.12 Update for NET232-PLUS-*-DYLOS, -OEM and -TSWA
+;
+Display '^M^JNET232(+/jr)/NETDIRECT/TTLETH Test Script V2.12'
+DONEPORT
+Set @Product 'NET232'
+Set @LabelStr 'None'
+Set @romfile 'None'
+Set @web1file 'None'
+Set @web3file 'None'
+Set @EndCfg ':20000010000000000000002D00000000000000004C0200001127000000000000C00000005D^M'
+Set @newver '6.5.0.7'
+:GetLabel
+Set @LabelBat 'Net232_print_vlab.bat'
+Input 'NET232 Test Script' 'Print which label?' 'Standard'
+Set @vendor @Lastinput
+Compare @Lastinput 'Standard'
+If Equal KnowLabel
+Compare @Lastinput 'NET232jr'
+If Equal jrLabel
+Compare @Lastinput 'NET232POE'
+If Equal POELabel
+Compare @Lastinput 'NETDIRECT'
+If Equal NETDIRECT
+Compare @Lastinput 'NETDIRECTMB'
+If Equal NETDIRECTMB
+Compare @Lastinput 'NETDIRECTATT'
+If Equal NETDIRECT
+Compare @Lastinput 'NET232Plus'
+If Equal PlusLabel
+Compare @Lastinput 'NET232PlusMB'
+If Equal PlusMBLabel
+Compare @Lastinput 'TTLETH'
+If Equal TTLEthLabel
+Compare @Lastinput 'OEM'
+If Equal OEMLabel
+Compare @Lastinput 'TSWA'
+If Equal TSWALabel
+Compare @Lastinput 'None'
+If Equal NoLabel
+Compare @Lastinput 'MBST'
+If Equal MBSTLabel
+Compare @Lastinput 'OEMBST'
+If Equal OEMBSTLabel
+Compare @Lastinput 'MasimoPOE'
+If Equal MsmoPoeLabel
+Compare @Lastinput 'Masimo'
+If Equal MsmoLabel
+Compare @Lastinput 'MasimoPlus'
+If Equal MsmoPlusLabel
+Compare @Lastinput 'MasimoNETD'
+If Equal NETDIRECT
+Compare @Lastinput 'GESecurity'
+If Equal GESecLabel
+Compare @Lastinput 'Lighthouse'
+If Equal LHLabel
+Compare @Lastinput 'Acroprint'
+If Equal AcroLabel
+Compare @Lastinput 'Lakewood'
+If Equal LkwdLabel
+Compare @Lastinput 'Vidtronix'
+If Equal VtxLabel
+Compare @Lastinput 'Infocus'
+If Equal InfLabel
+Compare @Lastinput 'Rainbird'
+If Equal RbLabel
+Compare @Lastinput 'ASD'
+If Equal ASDLabel
+Compare @Lastinput 'OneRingTel'
+If Equal ORTLabel
+Compare @Lastinput 'MedLineTec'
+If Equal MOTLabel
+Compare @Lastinput 'EBQS'
+If Equal EBQSLabel
+Compare @Lastinput 'GDC4'
+If Equal GDC4Label
+Compare @Lastinput 'MBTCP'
+If Equal MBTCPLabel
+Compare @Lastinput 'Dylos'
+If Equal DylosLabel
+Compare @Lastinput 'ORR'
+If Equal PlusORRLabel
+Display '^M^J!! ' + @Lastinput + ' is unknown !!'
+Display '^M^J>> Label must be Standard/NETDIRECT(MB/ATT)/NET232Plus(MB)/NET232jr/NET232POE/TTLETH/OEM/(OE)MBST/Masimo(POE/Plus/NETD)/MBTCP/Lighthouse/Dylos/TSWA/ORR/MedLineTec/Lakewood/GDC4/Acroprint/EBQS/Vidtronix/Infocus/Rainbird/GESecurity/ASD/OneRingTel'
+Delay 18
+Goto GetLabel
+
+:NETDIRECT
+Set @EndCfg ':20000010000000000000002D50415353000000004C0200001127000000000000C000000026^M'
+set @web1file 'c:\cobox\production\files\netdirect_webm_2000.cob'
+Set @LabelBat ''
+Set @ProductExt ''
+Compare @vendor 'MasimoNETD'
+If Equal MasimoNETDCfg
+Compare @vendor 'NETDIRECTATT'
+If Equal NETDIRECTATT
+Goto StandardNETD
+:MasimoNETDCfg
+Set @EndCfg ':20000010000000000000002D50415353000000004C080000E9036910C0A8177805000005B2^M'
+Set @ProductExt '_MASIMO'
+Goto StandardNETD
+:StandardNETD
+Input 'NETDIRECT Part' 'GC-ND- 232, 485 or POE?' '232'
+Compare @Lastinput '232'
+If Equal NETD232
+Compare @Lastinput '485'
+If Equal NETD485
+Compare @Lastinput 'POE'
+If Equal NETDPOE
+Display '^M^J!! ' + @Lastinput + ' is unknown !!'
+Display '^M^J>> NETDIRECT Part must be GC-ND-(232/485/POE)'
+Delay 18
+Goto NETDIRECT
+:NETD232
+Set @Product 'NETDIRECT_232' + @ProductExt
+Goto KnowLabel
+:NETD485
+Set @Product 'NETDIRECT_485' + @ProductExt
+Goto KnowLabel
+:NETDPOE
+Set @Product 'NETDIRECT_POE' + @ProductExt
+Goto KnowLabel
+
+:NETDIRECTATT
+Input 'NETDIRECT POE ATT Part' 'GC-ND-POE- DCE or TB?' 'DCE'
+Compare @Lastinput 'DCE'
+If Equal NETDATTDCE
+Compare @Lastinput 'TB'
+If Equal NETDATTTB
+Display '^M^J!! ' + @Lastinput + ' is unknown !!'
+Display '^M^J>> NETDIRECT POE ATT Part must be GC-ND-POE-(DCE/TB)-ATT'
+Delay 18
+Goto NETDIRECTATT
+:NETDATTDCE
+Set @Product 'NETDIRECT_POE_DCE_ATT'
+Set @web1file 'c:\cobox\production\files\netd_dce_att_webm_2000.cob'
+Goto KnowLabel
+:NETDATTTB
+Set @EndCfg ':20000010000000000000002D00000000000000004D0200001127000000000000C00000005C^M'
+Set @Product 'NETDIRECT_POE_TB_ATT'
+Set @web1file 'c:\cobox\production\files\netd_tb_att_webm_2000.cob'
+Goto KnowLabel
+
+:NETDIRECTMB
+Set @romfile 'c:\cobox\production\files\amnetd_3400.rom'
+Set @web1file 'c:\cobox\production\files\amnetd_webm_1103.cob'
+Set @newver '3.4.0.0'
+Set @LabelStr 'm3400-1103'
+Set @LabelBat ''
+Input 'NETDIRECT Part' 'GC-ND- 485 or POE?' '485'
+Compare @Lastinput '485'
+If Equal NETD485MB
+Compare @Lastinput 'POE'
+If Equal NETDPOEMB
+Display '^M^J!! ' + @Lastinput + ' is unknown !!'
+Display '^M^J>> NETDIRECTMB Part must be GC-ND-(485/POE)'
+Delay 18
+Goto NETDIRECTMB
+:NETD485MB
+Set @Product 'NETDIRECT_485_MB'
+Goto KnowLabel
+:NETDPOEMB
+Set @Product 'NETDIRECT_POE_MB'
+Goto KnowLabel
+
+:TSWALabel
+Set @Product 'NET232Plus_TSWA'
+Set @romfile 'c:\cobox\production\files\NET232pl_6807GC.rom'
+Set @web1file 'c:\cobox\production\files\TSWA_NET232pl_gen_webm_1902.cob'
+Set @newver '6.8.0.7'
+Set @LabelStr 'e6807-1902'
+Set @LabelBat 'Net232TSWA_print_lab.bat'
+Goto KnowLabel
+:OEMLabel
+Set @Product 'NET232Plus'
+Set @romfile 'c:\cobox\production\files\NET232pl_6807GC.rom'
+Set @web1file 'c:\cobox\production\files\NET232pl_gen_webm_1902.cob'
+Set @newver '6.8.0.7'
+Set @LabelStr 'e6807-1902'
+Set @LabelBat 'Net232OEM_print_lab.bat'
+Goto KnowLabel
+:OEMBSTLabel
+Set @LabelBat 'Net232OEM_print_lab.bat'
+; also load MBST firmware
+:MBSTLabel
+Set @Product 'NET232Plus_MBST'
+Display '^M^J!! MBST firmware will be loaded on the NET232-PLUS !!'
+Set @romfile 'NET232pl_6901MB.rom'
+Set @web1file 'NET232pl_webm_2006MB.cob'
+Set @LabelStr 'm6901-2006'
+Goto KnowLabel
+:jrLabel
+Set @Product 'NET232jr'
+Goto KnowLabel
+:MsmoLabel
+Set @Product 'NET232_MASIMO'
+Set @EndCfg ':20000010000000000000002D00000000000000004C080000E9036910C0A8177805000005E9^M'
+Set @LabelBat 'Masimo_print_lab.bat'
+Goto KnowLabel
+:MsmoPlusLabel
+Set @Product 'NET232_PLUS_MASIMO'
+Set @EndCfg ':20000010000000000000002D00000000000000004C080000E90369100000000005000005E0^M'
+Set @LabelBat 'Masimo_print_lab.bat'
+Set @romfile 'c:\cobox\production\files\NET232pl_6805GC.rom'
+Set @web1file 'c:\cobox\production\files\NET232pl_webm_1901.cob'
+Set @newver '6.8.0.5'
+Set @LabelStr 'e6805-1901'
+Goto KnowLabel
+:MsmoPoeLabel
+Set @EndCfg ':20000010000000000000002D00000000000000004C080000E9036910C0A8177805000005E9^M'
+Set @Product 'NET232_POE_MASIMO'
+set @web1file 'c:\cobox\production\files\net232poe_webm_1605.cob'
+Set @LabelBat 'Masimo_print_lab.bat'
+Goto KnowLabel
+:POELabel
+Set @Product 'NET232_POE'
+set @web1file 'c:\cobox\production\files\net232poe_webm_1605.cob'
+Goto KnowLabel
+:NoLabel
+Set @LabelBat ''
+Goto KnowLabel
+:GESecLabel
+Set @Product 'NET232_GESecurity'
+Set @LabelBat 'Net232GESec_print_lab.bat'
+Set @vendor 'Standard'
+Goto KnowLabel
+:LHLabel
+Set @Product 'NET232Plus_Lighthouse'
+Set @romfile 'c:\cobox\production\files\lh_NET232pl_6901MB.rom'
+Set @web1file 'c:\cobox\production\files\lh_NET232pl_webm_2006MB.cob'
+Set @LabelBat 'Net232LH_print_lab.bat'
+Goto KnowLabel
+:AcroLabel
+Set @LabelBat 'Net232Acro_print_lab.bat'
+Goto KnowLabel
+:PlusLabel
+Set @Product 'NET232Plus'
+Set @romfile 'c:\cobox\production\files\NET232pl_6807GC.rom'
+Set @web1file 'c:\cobox\production\files\NET232pl_webm_1902.cob'
+Set @newver '6.8.0.7'
+Set @LabelStr 'e6807-1902'
+Goto KnowLabel
+:PlusORRLabel
+Set @Product 'NET232Plus_ORR'
+Set @romfile 'c:\cobox\production\files\NET232pl_6807GC.rom'
+Set @web1file 'c:\cobox\production\files\NET232pl_webm_1902.cob'
+Set @newver '6.8.0.7'
+Set @LabelBat 'Organic_print_lab.bat'
+Set CONFIGFILE c:\cobox\production\cfg\proddb.ini
+Set @numIP4 0
+Set @numVar1 0
+READCONFIG 'Organic_Resp' 'IP4' '1'
+Set @numIP4 @LastInput
+;Set @LabelStr '192.168.001.' + @numIP4
+Set @LabelStr '"  Dynamic IP   "'
+Goto KnowLabel
+:LkwdLabel
+Set @romfile 'c:\cobox\production\files\lkwd_xptex_6104GC.rom'
+Set @web1file 'c:\cobox\production\files\lkwd_1301GC.cob'
+Set @web3file 'c:\cobox\production\files\xpt_webm_1300.cob'
+Set @EndCfg ':20000010000000000000002D00000000000000004C0100001127000000000000C00000005E^M'
+Set @newver '6.1.0.2'
+Set @LabelStr 'g6104-1301'
+Goto KnowLabel
+:VtxLabel
+Set @Product 'NET232jr_Vtx'
+Set @romfile 'c:\cobox\production\files\vtx_xpt_6102GCB3.rom'
+Set @web1file 'c:\cobox\production\files\vtx_6102GCB1.cob'
+Set @web3file 'c:\cobox\production\files\xpt_webm_1300.cob'
+Set @newver '6.1.0.2'
+Set @LabelBat 'Net232Vtx_print_lab.bat'
+Set @LabelStr 'g6102-1300'
+Goto KnowLabel
+:InfLabel
+Set @Product 'NET232jr_Infocus'
+Set @web1file 'c:\cobox\production\files\infocus_1602B2.cob'
+Set @EndCfg ':20000010000000000000002D00000000000000004C0800001127000000000000C000000057^M'
+Set @newver '6.5.0.7'
+Set @LabelBat 'Net232Inf_print_lab.bat'
+Input 'Infocus Label' 'Convert date to YYYYMMDD format' @Date
+Set @LabelStr @Lastinput
+Goto KnowLabel
+:TTLEthLabel
+Set @Product 'TTLETH'
+Goto KnowLabel
+:RbLabel
+Set @Product 'TTLETH_Rainbird'
+Set @romfile 'c:\cobox\production\files\rainbird_xpt05_6971GC.rom'
+Set @web1file 'c:\cobox\production\files\rainbird_xpt_webm_2002.cob'
+Set @EndCfg ':20000010000000000000002D00000000000000004C0600002C272C27000000000C28000077^M'
+Set @newver '6.9.7.1'
+Set @LabelBat 'Rainbird_print_lab.bat'
+Set @LabelStr 'g6971-2002'
+Goto KnowLabel
+:ASDLabel
+Set @LabelBat 'Net232ASD_print_lab.bat'
+Goto KnowLabel
+:MOTLabel
+Set @romfile 'c:\cobox\production\files\xpt03_medlinetec_6601GC.rom'
+Set @web1file 'c:\cobox\production\files\medlinetec_1701.cob'
+Set @EndCfg ':20000010000000000000002D00000000000000004C0200001127B70D000000000100000058^M'
+Set @Product 'NET232_MedLineTec'
+Set @newver '6.6.0.1'
+Set @LabelBat 'Net232OEM_print_lab.bat'
+Set @LabelStr 'g6601-1701'
+Goto KnowLabel
+:GDC4Label
+Set @EndCfg ':20000010000000000000002D00000000000000004C0C00001127182700000000C50000000F^M'
+Set @Product 'NET232_GDC4'
+Set @LabelBat 'Net232GDC4_print_lab.bat'
+Goto KnowLabel
+:EBQSLabel
+Set @romfile 'c:\cobox\production\files\dns_mac_xptex_6702GCB2.rom'
+Set @web1file 'c:\cobox\production\files\dns_xpt_webm_1801GC.cob'
+Set @Product 'NET232_EBQS'
+Set @newver '6.7.0.2'
+Set @LabelBat 'Net232EBQS_print_lab.bat'
+Set @LabelStr 'g6702-1801'
+Goto KnowLabel
+:MBTCPLabel
+Set @Product 'NET232_MB'
+:MBTCPFiles
+Display '^M^J!! Modbus firmware will be loaded on the NET232 !!'
+Set @romfile 'c:\cobox\production\files\amxp05_3301.rom'
+Set @web1file 'c:\cobox\production\files\amxpt_webm_1002.cob'
+Set @LabelStr 'm3301-1001'
+Goto KnowLabel
+:PlusMBLabel
+Set @Product 'NET232Plus_MB'
+Set @romfile 'c:\cobox\production\files\gm232pl_3400.rom'
+Set @web1file 'c:\cobox\production\files\gm232pl_webm_1102.cob'
+Set @newver '3.4.0.0'
+Set @LabelStr 'm3400-1102'
+Goto KnowLabel
+:DylosLabel
+Set @Product 'NET232Plus_Dylos'
+Set @romfile 'c:\cobox\production\files\dm232pl_3401.rom'
+Set @web1file 'c:\cobox\production\files\null.cob'
+Set @newver '3.4.0.1'
+Set @LabelStr 'g3401-0000'
+Goto KnowLabel
+:ORTLabel
+Set @web1file 'c:\cobox\production\files\gen_xpt_webm_1701.cob'
+Set @LabelBat 'OneRingTel_print_lab.bat'
+
+:KnowLabel
+Set CONFIGFILE c:\cobox\production\cfg\test.ini
+READCONFIG 'GridConnect' 'TestIP' 'Unknown'
+;Set @ip '50'
+;Set @Cfg ':20000010AC14CE320000002D00000000000000004C0200001127000000000000C00000009D^M'
+Compare @Lastinput 'Unknown'
+If Equal CfgFailed
+Set @ip @LastInput
+READCONFIG 'GridConnect' 'TestCfg' 'Unknown'
+Compare @Lastinput 'Unknown'
+If Equal CfgFailed
+Set @Cfg @LastInput
+Set @Cfg @Cfg + '^M'
+READCONFIG 'GridConnect' 'Cmd' 'Unknown'
+Compare @Lastinput 'Unknown'
+If Equal LoadFailed
+Compare @Lastinput 'None'
+If Equal ChkRunning
+Goto Restart
+:ChkRunning
+WRITECONFIG 'GridConnect' 'Cmd' 'Hello'
+Delay 30
+Goto StartLoad
+:Restart
+WRITECONFIG 'GridConnect' 'IP' '0.0.0.0'
+WRITECONFIG 'GridConnect' 'Cmd' 'None'
+WRITECONFIG 'GridConnect' 'Result' 'None'
+Set @comtest 'c:\program files\tgl micro\com\com72 -SCRIPT comtest2.scr'
+Execfile @comtest
+Delay 50
+:StartLoad
+READCONFIG 'GridConnect' 'Cmd' 'Unknown'
+Compare @Lastinput 'Unknown'
+If Equal LoadFailed
+Compare @Lastinput 'None'
+If Equal Running
+Goto Restart
+:Running
+;Input 'NET232 Test Script' 'Set IP Address to 172.20.206.?' @ip
+;Compare @ip @Lastinput
+;If Equal DefaultIP
+Goto DefaultIP
+set @Cfg 'None'
+:DefaultIP
+INITPORT COM2 9600
+PARITY NONE
+DATABITS 8
+STOPBITS 1
+SET HWFLOW NONE
+;Set @ip @Lastinput
+;Set @ip '50'
+Set @ipaddr '172.20.206.' + @ip
+Set @tftprom 'c:\cobox\production\tftp -v -i 172.20.206.' + @ip + ' PUT ' + @romfile
+Set @tftpwb1 'c:\cobox\production\tftp -v -i 172.20.206.' + @ip + ' PUT ' + @web1file + ' WEB1'
+Set @tftpwb3 'c:\cobox\production\tftp -v -i 172.20.206.' + @ip + ' PUT ' + @web3file + ' WEB3'
+Set @manualab 'c:\program files\wasp bar code\labeler -p c:\barcode\Xport-03_6100_date.lab'
+Set @arpcmd 'arp -d 172.20.206.' + @ip
+Set @pingcmd 'ping -n 1 -w 100 172.20.206.' + @ip
+Execfile @arpcmd
+Display '^M^JPower ON the ' + @Product
+Send 'xx'
+:Txxx
+Send 'x'
+Wait 'MAC' 6
+If Success GetVer
+Goto Txxx
+:GetVer
+WaitMulti 'V6.1.0.0|V6.5.0.|V6.6.0.2|V6.7.0.1|V6.8.0|V6.9.0|V6.10.' 15
+If 1 V6100
+If 2 V6507
+If 3 V6602
+If 4 V6701
+If 5 V6802
+If 6 V6900
+If 7 V6A01
+Goto BadVersion
+:V6A01
+Set @VerStr 'x6A01-2006'
+Goto LabelCheck
+:V6900
+Set @VerStr 'x6900-2000'
+Goto LabelCheck
+:V6802
+Set @VerStr 'x6802-1901'
+Goto LabelCheck
+:V6701
+Set @VerStr 'x6701-1801'
+Goto LabelCheck
+:V6602
+Set @VerStr 'x6602-1701'
+Goto LabelCheck
+:V6507
+Set @VerStr 'x6507-1602'
+Goto LabelCheck
+:V6100
+:V6102
+Set @VerStr 'x6102-1301'
+Goto LabelCheck
+:LabelCheck
+Compare @LabelStr 'None'
+If Equal SaveVerStr
+Goto EnterMon
+:SaveVerStr
+Set @LabelStr @VerStr
+
+:EnterMon
+Send 'M'
+Wait '0>' 30
+Compare @vendor 'NET232POE'
+If Equal CheckPOE
+Compare @vendor 'MasimoPOE'
+If Equal CheckPOE
+Compare @vendor 'NETDIRECT'
+If Equal CheckNETD
+Compare @vendor 'MasimoNETD'
+If Equal CheckNETD
+Compare @vendor 'NETDIRECTMB'
+If Equal CheckNETD
+Compare @vendor 'NETDIRECTATT'
+If Equal CheckNETD
+Compare @vendor 'NET232Plus'
+If Equal CheckPlus
+Compare @vendor 'ORR'
+If Equal CheckPlus
+Compare @vendor 'MasimoPlus'
+If Equal CheckPlus
+Compare @vendor 'NET232PlusMB'
+If Equal CheckPlus
+Compare @vendor 'Dylos'
+If Equal CheckPlus
+Compare @vendor 'Lighthouse'
+If Equal CheckPlus
+Compare @vendor 'MBST'
+If Equal CheckPlus
+Compare @vendor 'OEMBST'
+If Equal CheckPlus
+Compare @vendor 'OEM'
+If Equal CheckPlus
+Compare @vendor 'TSWA'
+If Equal CheckPlus
+Send 'VS^M'
+WaitMulti '5835|5839' 30
+If 1 XPort04
+If 2 XPort05
+Goto WrongDevice
+:CheckPOE
+Send 'VS^M'
+Wait '5838' 30
+If Timeout NotXPDP
+Compare @VerStr 'x6507-1602'
+If Equal DevRomProdMatch
+Goto BadVersion
+:CheckNETD
+Send 'VS^M'
+Wait '5535' 30
+If Timeout NotNETD
+Compare @vendor 'NETDIRECTMB'
+If Equal NETDMBTCP
+Set @tftprom @tftprom + ' U5'
+Goto DevRomProdMatch
+:CheckPlus
+Send 'VS^M'
+Wait '5836' 30
+If Timeout NotXPico
+Compare @vendor 'NET232PlusMB'
+If Equal PlusMBTCP
+Compare @vendor 'Dylos'
+If Equal PlusMBTCP
+Set @tftprom @tftprom + ' X6'
+Goto DevRomProdMatch
+:XPort05
+Compare @romfile 'None'
+If Equal CheckWebMgr
+Compare @vendor 'MBTCP'
+If Equal XP05MBTCP
+Set @tftprom @tftprom + ' X9'
+Compare @vendor 'Rainbird'
+If Equal DevRomProdMatch
+Goto WrongXPort
+:XP05MBTCP
+:PlusMBTCP
+:NETDMBTCP
+Set @tftprom @tftprom + ' AU'
+Goto DevRomProdMatch
+:CheckWebMgr
+Compare @web1file 'None'
+If Equal CheckProduct
+Goto WrongXport
+:CheckProduct
+Compare @Product 'NET232'
+If Equal DevRomProdMatch
+Compare @Product 'NET232jr'
+If Equal DevRomProdMatch
+Compare @Product 'NET232_GDC4'
+If Equal DevRomProdMatch
+Compare @Product 'OEM'
+If Equal DevRomProdMatch
+Compare @Product 'TTLETH'
+If Equal DevRomProdMatch
+Goto WrongDevice
+:XPort04
+Compare @vendor 'MBTCP'
+If Equal XP04MBTCP
+Set @tftprom @tftprom + ' X5'
+Compare @vendor 'Rainbird'
+If Equal XP04Rainbird
+Goto DevRomProdMatch
+:XP04MBTCP
+Set @romfile 'c:\cobox\production\files\amxpt_3301.rom'
+Set @tftprom @tftprom + ' AU'
+Goto DevRomProdMatch
+:XP04Rainbird
+Set @romfile 'None'
+Set @web1file 'None'
+Goto DevRomProdMatch
+
+:DevRomProdMatch
+Wait '0>' 30
+Send 'S0^M'
+Send @Cfg
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':200040104C0200001227000000000000C00000000000000000000000000000000000000049^M'
+Send ':1800601000000000000000000000000000000000000000000000000078^M'
+Send ':00000001FF'
+Wait '0>' 30
+Compare @vendor 'Standard'
+If Equal DevName
+Compare @vendor 'NET232jr'
+If Equal DevName
+Compare @vendor 'NET232Plus'
+If Equal DevName
+Compare @vendor 'Masimo'
+If Equal DevName
+Compare @vendor 'MasimoPlus'
+If Equal DevName
+Compare @vendor 'NET232POE'
+If Equal DevNamePoe
+Compare @vendor 'MasimoPOE'
+If Equal DevNamePoe
+Compare @vendor 'NETDIRECT'
+If Equal DevNameNETD
+Compare @vendor 'MasimoNETD'
+If Equal DevNameNETD
+Compare @vendor 'NETDIRECTATT'
+If Equal DevNameNETD
+Goto SkipS2
+:DevName
+Send 'S2^M'
+Send ':200000100000000000000000000000000000000000000000000000000000000000000000D0^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M
+Send ':2000401000000000000000000000000000000000000000000000000000000000004E4554A9^M'
+Send ':1E006010323332000000000000000000000000000000000000000000000000000000DB^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto SkipS2
+:DevNameNETD
+Send 'S2^M'
+Send ':200000100000000000000000000000000000000000000000000000000000000000000000D0^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M
+Send ':2000401000000000000000000000000000000000000000000000000000000000004E4554A9^M'
+Send ':1E006010444952454354000000000000000000000000000000000000000000000000B7^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto SkipS2
+:DevNamePoe
+Send 'S2^M'
+Send ':200000100000000000000000000000000000000000000000000000000000000000000000D0^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000000000000000000000000000000000000004E4554A9^M'
+Send ':1E0060103233322D506F450000000000000000000000000000000000000000000000AA^M'
+Send ':00000001FF'
+Wait '0>' 30
+:SkipS2
+Send 'S4^M'
+Send ':200000100000011C00000000000000000000000000000000000000000000000000000000B3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Compare @vendor 'NET232Plus'
+If Equal PlusRecs
+Compare @vendor 'NET232PlusMB'
+If Equal PlusRecs
+Compare @vendor 'Dylos'
+If Equal PlusRecs
+Compare @vendor 'Lighthouse'
+If Equal PlusRecs
+Compare @vendor 'MBST'
+If Equal PlusRecs
+Compare @vendor 'OEMBST'
+If Equal PlusRecs
+Compare @vendor 'OEM'
+If Equal PlusRecs
+Compare @vendor 'TSWA'
+If Equal PlusRecs
+Compare @vendor 'MasimoPlus'
+If Equal MsmoPlusRecs
+Compare @vendor 'Infocus'
+If Equal InfRecs
+Compare @vendor 'Vidtronix'
+If Equal VtxRecs
+Compare @vendor 'Lakewood'
+If Equal LkwdRecs
+Compare @vendor 'MedLineTec'
+If Equal MOTecRecs
+Compare @vendor 'GDC4'
+If Equal GDC4Recs
+Compare @vendor 'EBQS'
+If Equal GetMac
+Compare @vendor 'Rainbird'
+If Equal RainbirdRecs
+Compare @vendor 'MBTCP'
+If Equal MBTCPRecs
+Compare @vendor 'NETDIRECT'
+If Equal GetMAC
+Compare @vendor 'MasimoNETD'
+If Equal GetMAC
+Compare @vendor 'NETDIRECTMB'
+If Equal MBTCPKey
+Compare @vendor 'NETDIRECTATT'
+If Equal GetMAC
+Goto CPPins
+:MsmoPlusRecs
+Send 'S7^M'
+Send ':2000001000040500000000000000000000000000003139322E3136382E32332E313230000A^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto EnhRecs
+:PlusRecs
+Send 'S7^M'
+Send ':200000100004050000000000000000000000000000000000000000000000000000000000C7^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Compare @vendor 'NET232PlusMB'
+If Equal MBTCPKey
+Compare @vendor 'Dylos'
+If Equal MBTCPKey
+Compare @vendor 'Lighthouse'
+If Equal MBTCPKey
+Compare @vendor 'MBST'
+If Equal MBTCPKey
+Compare @vendor 'OEMBST'
+If Equal MBTCPKey
+:EnhRecs
+Send 'S3^M'
+Send ':2000001003FA000000000000000000000000000000000000000000000000000000000000D3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000D0D0000000000000000000000000000000000000076^M'
+Send ':1E006010000000005802000000000000000000000000000000000000000013270000DE^M'
+Send ':00000001FF'
+Wait '0>' 30
+Send 'S6^M'
+Send ':20000010000000000000000000000000000000000000000000000000000047000000000089^M'
+Send ':20002010000000000000000000000000000000000000000000030100000000004700000065^M'
+Send ':20004010000000000000000000000000000000000000000000000003010000000000470045^M'
+Send ':1E0060100000000000000000000000000000000000000000000000000003010000006E^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto GetMac
+:InfRecs
+Send 'S2^M'
+Send ':200000100000000000000000000000000000000000000000000000000000000000000000D0^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':200040100000000000000000000000000000000000000000000000000000000000496E4679^M'
+Send ':1E0060106F6375730000000000000000000000000000000000000000000000000000B8^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto CPPins
+:VtxRecs
+Send 'S3^M'
+Send ':2000001003FA000000000000000000000000000000000000000000000000000000000000D3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000D0D0000000000000000000000000000000000000076^M'
+Send ':1E00601000000000580200000000000000000000000000000000000000000000020313^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto CPPins
+:LkwdRecs
+Send 'S1^M'
+Send ':2000001008000000000000000000000000000000006C616B65776F6F6432303030000000B0^M'
+Send ':2000201000007075626C696300000000000000000000000000000000000000000000000031^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Send 'S2^M'
+Send ':2000001000000000000041457403E9D5FEC746F82055EB2F837EF43300000000000000005B^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Send 'S5^M'
+Send ':20000010000000006C73616C736D616E406C616B65776F6F64696E737472756D656E747313^M'
+Send ':200020102E636F6D00000000000000000000000000000000007765626E6F64653132333B8E^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Send 'S6^M'
+Send ':2000001070726F2E747572626F2D736D74702E636F6D0000000000000000030000000000C4^M'
+Send ':200020100000000000000000000000000000000000000000000301000000000003000000A9^M'
+Send ':20004010000000000000000000000000000000000000000000000003010000000000030089^M'
+Send ':1E0060100000000000000000000000000000000000000000000000000003010000006E^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto CPPins
+:MOTecRecs
+Send 'S4^M'
+Send ':200000100000011C00000000000000000000000000000000000000000000000000000000B3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000073746D2E6D65646C696E657465632E636F6D00000087^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto CPPins
+:GDC4Recs
+Send 'S3^M'
+Send ':2000001003FA000000000000000000000000000000000000000000000000000000000000D3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000D0D0000000000000000000000000000000000000076^M'
+Send ':1E0060100000000058020000000000000000500019000000800000000000000000002F^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto GetMac
+:RainbirdRecs
+Send 'S2^M'
+Send ':200000100000000000004145F3ABE8625B33C08ED8B9802BB840E4AB0000000000000000F3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Send 'S7^M'
+Send ':200000100402010000000000000000000000000000000000000000000000000000000000C9^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto GetMac
+:MBTCPRecs
+Send 'S7^M'
+Send ':20000010000608808000000000800000000000000000000000000000000000000000000042^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+:MBTCPKey
+Send 'S2^M'
+Send ':200000100000000000004145F4292244432AFF97AB9423A7FC93A039000000000000000053^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto GetMac
+:CPPins
+Compare @vendor 'OneRingTel'
+If Equal ORTPins
+Send 'S7^M'
+Send ':20000010000601808000000000800000000000000000000000000000000000000000000049^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+Goto GetMac
+:ORTPins
+Send 'S7^M'
+Send ':20000010020603000080800000800000000000000000000000000000000000000000000045^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+:GetMac
+Send 'GM'
+Delay 2
+Send '^M'
+GetBytes 22 9
+Wait '0>' 10
+Send 'RS^M'
+Wait '0>' 5
+
+GetByte @mb
+Compare @mb 10
+If Equal StoreMAC
+;Display @mb
+GetByte @mb
+Compare @mb 10
+If Equal StoreMAC
+;Display @mb
+Goto MacFailed
+; MAC Found, retrieve and print later
+:StoreMAC
+Set @MAC @Lastinput
+;Display @Lastinput
+Set @Macaddr ''
+Set @RetLoc 0
+Set @lpcnt 17
+:MACOut
+Compare @lpcnt 0
+If Equal MACStored
+Dec @lpcnt
+GetByte @mb
+;Display @mb + '/'
+Compare @mb 48
+If Equal Asc0
+Compare @mb 49
+If Equal Asc1
+Compare @mb 50
+If Equal Asc2
+Compare @mb 51
+If Equal Asc3
+Compare @mb 52
+If Equal Asc4
+Compare @mb 53
+If Equal Asc5
+Compare @mb 54
+If Equal Asc6
+Compare @mb 55
+If Equal Asc7
+Compare @mb 56
+If Equal Asc8
+Compare @mb 57
+If Equal Asc9
+Compare @mb 58
+If Equal MacSep
+Compare @mb 65
+If Equal AscA
+Compare @mb 66
+If Equal AscB
+Compare @mb 67
+If Equal AscC
+Compare @mb 68
+If Equal AscD
+Compare @mb 69
+If Equal AscE
+Compare @mb 70
+If Equal AscF
+Compare @mb 97
+If Equal AscA
+Compare @mb 98
+If Equal AscB
+Compare @mb 99
+If Equal AscC
+Compare @mb 100
+If Equal AscD
+Compare @mb 101
+If Equal AscE
+Compare @mb 102
+If Equal AscF
+Display '^M^J!! MAC error, <'
+;print manually !!'
+Display MACaddr
+Display @mb + '!'
+Display '> Restart !!'
+Set @MACaddr 'Unknown'
+DONEPORT
+Goto StartLoad
+:MacSep
+Set @Macaddr @Macaddr + '-'
+Goto OutChRet
+:Asc0
+Set @Macaddr @Macaddr + '0'
+Goto OutChRet
+:Asc1
+Set @Macaddr @Macaddr + '1'
+Goto OutChRet
+:Asc2
+Set @Macaddr @Macaddr + '2'
+Goto OutChRet
+:Asc3
+Set @Macaddr @Macaddr + '3'
+Goto OutChRet
+:Asc4
+Set @Macaddr @Macaddr + '4'
+Goto OutChRet
+:Asc5
+Set @Macaddr @Macaddr + '5'
+Goto OutChRet
+:Asc6
+Set @Macaddr @Macaddr + '6'
+Goto OutChRet
+:Asc7
+Set @Macaddr @Macaddr + '7'
+Goto OutChRet
+:Asc8
+Set @Macaddr @Macaddr + '8'
+Goto OutChRet
+:Asc9
+Set @Macaddr @Macaddr + '9'
+Goto OutChRet
+:AscA
+Set @Macaddr @Macaddr + 'A'
+Goto OutChRet
+:AscB
+Set @Macaddr @Macaddr + 'B'
+Goto OutChRet
+:AscC
+Set @Macaddr @Macaddr + 'C'
+Goto OutChRet
+:AscD
+Set @Macaddr @Macaddr + 'D'
+Goto OutChRet
+:AscE
+Set @Macaddr @Macaddr + 'E'
+Goto OutChRet
+:AscF
+Set @Macaddr @Macaddr + 'F'
+:OutChRet
+Compare @RetLoc 0
+If Equal MACOut
+Goto LoadFailed
+
+:MACStored
+Compare @vendor 'MedLineTec'
+If Equal MOTecDSR
+Goto NoDSRtest
+:MOTecDSR
+; MedLineTec NET232 and NET232+ should have active DSR
+SET HWFLOW DTRDSR
+:NoDSRtest
+Delay 90
+Display '^M^JChecking Web Manager...'
+WRITECONFIG 'GridConnect' 'IP' @ipaddr
+WRITECONFIG 'GridConnect' 'Cmd' 'Test'
+Wait 'Passed' 50
+If Success Tunnel
+Goto WebFailed
+:Tunnel
+Display '^M^JChecking Tunnel...'
+Wait 'Ready' 100
+If Success Tunnel1
+Goto ComFailed
+:Tunnel1
+Send 'abcd,ABCD^M^J'
+Wait 'efgh/EFGH' 50
+If Success Tunnel2
+Goto ComFailed
+:Tunnel2
+Send '1234 !@#$^M^J'
+Wait '5678 %&*+' 50
+If Success DoneTunnel
+Goto ComFailed
+:DoneTunnel
+Send 'This is the test string for the NET232, NET485 etc^M^J'
+Send 'This is the test string for the NET232, NET485 etc^M^J'
+Send 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz^M^J'
+Send 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz^M^J'
+Send '0123456789 ~!@#$%&*()-_=+[{]}\|;:,<.>/?^M^J'
+Wait '>/?' 50
+Delay 8
+SET HWFLOW NONE
+DONEPORT
+Delay 18
+
+:DnldWeb1
+Compare @web1file 'None'
+If Equal DnldWeb3
+Display '^M^JLoading Web File...  (' + @web1file + '->WEB1)'
+Execfile @tftpwb1
+Input 'Web1 Update' 'Okay?' 'Y'
+Compare @LastInput 'Y'
+If Equal DnldWeb3
+Goto DnldWeb1
+:DnldWeb3
+Compare @web3file 'None'
+If Equal DnldRom
+Display '^M^JLoading Web File...  (' + @web3file + '->WEB3)'
+Execfile @tftpwb3
+Input 'Web3 Update' 'Okay?' 'Y'
+Compare @LastInput 'Y'
+If Equal DnldRom
+Goto DnldWeb3
+:DnldRom
+Compare @romfile 'None'
+If Equal RestoreCfg
+Display '^M^JLoading ROM File...  (' + @romfile + '->X5)'
+Execfile @tftprom
+Input 'ROM Update' 'Okay?' 'Y'
+Compare @LastInput 'Y'
+If Equal RomLoaded
+Goto DnldRom
+:RomLoaded
+Delay 80
+
+Compare @vendor 'Rainbird'
+If Equal RainbirdChKey
+Compare @vendor 'MBTCP'
+If Equal MBTCPChKey
+Compare @vendor 'Lighthouse'
+If Equal STMBChKey
+Compare @vendor 'MBST'
+If Equal STMBChKey
+Compare @vendor 'OEMBST'
+If Equal STMBChKey
+Compare @vendor 'NET232PlusMB'
+If Equal MBTCP34ChKey
+Compare @vendor 'Dylos'
+If Equal MBTCPDylosChKey
+Compare @vendor 'NETDIRECTMB'
+If Equal MBTCP34ChKey
+Goto RestoreCfg
+
+:RainbirdChKey
+; Wait to allow key to be initialized then set MBTCP defaults
+Delay 20
+OPENCLIENT @ipaddr 9999
+; Make sure the firmware is loaded
+Wait '6.9.7.1GC' 20
+If Success EnterSetupRB
+Goto BadVersion
+:EnterSetupRB
+Send '^M'
+Wait 'DAMAGED' 40
+If Success KeyFailed
+Send '8^M'
+Delay 40
+Goto RestoreCfg
+
+:STMBChKey
+OPENCLIENT @ipaddr 9999
+; Make sure the firmware is loaded
+Wait '6.9.22.1MB' 20
+If Success EnterMonMBTCP
+Goto BadVersion
+
+:MBTCPChKey
+; Wait to allow key to be initialized then set MBTCP defaults
+Delay 20
+OPENCLIENT @ipaddr 9999
+; Make sure the firmware is loaded
+Wait '3.3.0.1GC' 20
+If Success EnterMonMBTCP
+Goto BadVersion
+:MBTCP34ChKey
+; Wait to allow key to be initialized then set MBTCP defaults
+Delay 20
+OPENCLIENT @ipaddr 9999
+; Make sure the firmware is loaded
+Wait '3.4.0.0GC' 20
+If Success EnterMonMBTCP
+Goto BadVersion
+:MBTCPDylosChKey
+; Wait to allow key to be initialized then set MBTCP defaults
+Delay 20
+OPENCLIENT @ipaddr 9999
+; Make sure the firmware is loaded
+Wait '3.4.0.1GC' 20
+If Success EnterMonMBTCP
+Goto BadVersion
+:EnterMonMBTCP
+Send 'M'
+Wait '0>' 30
+Send 'GM^M'
+Wait '0>' 30
+If Success PostConfigMBTCP
+Send 'GM^M'
+Wait '0>' 30
+If Timeout RestoreFailed
+:PostConfigMBTCP
+Send 'G2^M'
+Wait '45F429' 30
+If Success KeyFailed
+Compare @vendor 'NETDIRECTMB'
+If Equal MBNETDSetDefs
+Compare @vendor 'Lighthouse'
+If Equal STMBLHSetDefs
+Send 'S0^M'
+Wait '0' 5
+Send ':20000010000000000000002D00000000000000004C02C0000887010A0000000000000000FB^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000000000000000000000000000000020000000000008E^M'
+Send ':18006010000A0000000033443443F60100000000000000000000000089^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Send 'QU^M'
+Delay 10
+Goto DisplayResult
+
+:MBNETDSetDefs
+Send 'S0^M'
+Wait '0' 5
+Send ':20000010000000000000002D50415353000000004C02C0000887010A0000000000000000C4^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000000000000000000000000000000020000000000008E^M'
+Send ':18006010000A0000000033443443F60100000000000000000000000089^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Send 'QU^M'
+Delay 10
+Goto DisplayResult
+
+:STMBLHSetDefs
+Send 'S0^M'
+Wait '0' 5
+Send ':20000010000000000000002D00000000000000004C010000F601000000000000C800000097^M'
+Send ':200020100000000041003200E8030000000000000000000000000000000000000000000052^M'
+Send ':200040104C0200001227000000000000C00000000000000000000000000000000000000049^M'
+Send ':1800601000000000000000000000000000000000000000000000000078^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Send 'QU^M'
+Delay 10
+Goto DisplayResult
+
+:RestoreCfg
+OPENCLIENT @ipaddr 9999
+Goto EnterTelnet
+
+:EnterTelnet
+WaitMulti '6.1.0|6.5.0|6.6.0|6.7.0|V6.8.0|V6.9.|V6.10.' 50
+If 1 EnterMonChk
+If 2 EnterMon2
+If 3 EnterMon2
+If 4 EnterMon2
+If 5 EnterMon2
+If 6 EnterMon2
+If 7 EnterMon2
+Goto RestoreFailed
+; Clear IP address and set new defaults by entering Setup
+:EnterMonChk
+Compare @vendor 'Lakewood'
+If Equal EnterMonLkwd
+Goto EnterMon2
+:EnterMonLkwd
+Send 'lakewood2000'
+Delay 3
+:EnterMon2
+Send 'M'
+Wait '0>' 30
+Send 'GM^M'
+Wait '0>' 30
+If Success PostConfig
+Send 'GM^M'
+Wait '0>' 30
+If Timeout RestoreFailed
+:PostConfig
+Compare @vendor 'NET232Plus'
+If Equal PlusPostConfig
+Compare @vendor 'MasimoPlus'
+If Equal PlusPostConfig
+Compare @vendor 'ORR'
+If Equal PlusPostConfig
+Compare @vendor 'OEM'
+If Equal PlusPostConfig
+Compare @vendor 'TSWA'
+If Equal TSWAPostConfig
+Compare @vendor 'Rainbird'
+If Equal RBPostConfig
+Compare @Product 'NETDIRECT_POE_DCE_ATT'
+If Equal NETDATTPostConfig
+Send 'S0^M'
+Wait '0' 5
+Send @EndCfg
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':200040104C0200001227000000000000C00000000000000000000000000000000000000049^M'
+Send ':1800601000000000000000000000000000000000000000000000000078^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Compare @vendor 'Lakewood'
+If Equal LkwdRec3
+Compare @vendor 'Masimo'
+If Equal MsmoPasswd
+Compare @vendor 'MasimoPOE'
+If Equal MsmoPasswd
+Compare @vendor 'MasimoNETD'
+If Equal MsmoPasswd
+Compare @vendor 'NETDIRECTATT'
+If Equal NETDATTPasswd
+Goto MonReset
+:PlusPostConfig
+Send 'S0^M'
+Wait '0' 5
+Send @EndCfg
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':200040104C0200001227000000000000000000000000000000000000000000000000000009^M'
+Send ':1800601000000000000000000000000000000000000000000000000078^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Compare @vendor 'MasimoPlus'
+If Equal MsmoPasswd
+Compare @vendor 'ORR'
+If Equal ORRPostConfig
+Goto MonReset
+:ORRPostConfig
+Send 'S3^M'
+Wait '3' 5
+Send ':2000001003FA000000000000000000000000000000000000000000000000000000000000D3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000D0D0000000000000000000000000000000000000076^M'
+Send ':1E00601000000000580200000000000000005000190000006000F40100001327000020^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Send 'S1^M'
+Wait '1' 5
+Send ':2000001008000000000000000000000000000000006F726573000000000000000000000049^M'
+Send ':2000201000007075626C696300000000000000000000000000000000000000000000000031^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Goto MonReset
+:TSWAPostConfig
+Send 'S0^M'
+Wait '0' 5
+Send ':20000010000000000000002D00000000000000004C0200001127000800000000C500000050^M'
+Send ':2000201000008001000000000000000000000000000000000000000000000000000000002F^M'
+Send ':200040104C0200001227000000000000000000000000000000000000000000000000000009^M'
+Send ':1800601000000000000000000000000000000000000000000000000078^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Send 'S3^M'
+Wait '3' 5
+Send ':2000001003FA000000000000000000000000000000000000000000000000000000000000D3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000D0D0000000000000000000000000000000000000076^M'
+Send ':1E006010000000005802000000000000000000000000000001000000000013270000DD^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Send 'S7^M'
+Wait '7' 5
+Send ':20000010000405000000000000000000000000000031302E312E312E3232320000000000E4^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Goto MonReset
+;Send 'co 192.168.1.? 0 0.0.0.0^M'
+;Delay 40
+;Goto SetupKey
+:RBPostConfig
+Send 'S0^M'
+Wait '0' 5
+Send @EndCfg
+Send ':20002010000000001EB40000000000000000000000000000000000000000000000000000DE^M'
+Send ':200040104C0200001227000000000000C00000000000000000000000000000000000000049^M'
+Send ':1800601000000000000000000000000000000000000000000000000078^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Send 'G2'
+Wait '2' 5
+Send '^M'
+GetBytes 78 10
+Wait '0>' 30
+;Display @Lastinput
+Send 'S2'
+Wait '2' 5
+Send @Lastinput
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':200040100000000000000000000000000000000000000000000000000000000000524244B8^M'
+Send ':1E006010532D53454D4554000000000000000000000000000000000000000000000074^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Goto MonReset
+:MsmoPasswd
+Send 'S1^M'
+Send ':2000001008000000000000000000000000000000004D4153214D3000000000000000000049^M'
+Send ':2000201000007075626C696300000000000000000000000000000000000000000000000031^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Goto MonReset
+:NETDATTPostConfig
+Send 'S0^M'
+Wait '0' 5
+Send ':20000010000000000000002D00000000000000004C0200001127000000000000C00000005D^M'
+Send ':20002010000080000000000000000000000000000000000000000000000000000000000030^M'
+Send ':200040104C0200001227000000000000C00000000000000000000000000000000000000049^M'
+Send ':1800601000000000000000000000000000000000000000000000000078^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+:NETDATTPasswd
+Send 'S1^M'
+Wait '1' 5
+Send ':200000100800000000000000000000000000000000415454434F4E4E454354000000000049^M'
+Send ':2000201000007075626C696300000000000000000000000000000000000000000000000031^M'
+Send ':20004010000000000000000000000000000000000000000000000000000000000000000090^M'
+Send ':1E00601000000000000000000000000000000000000000000000000000000000000072^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+Goto MonReset
+:LkwdRec3
+Send 'S3^M'
+Send ':2000001003FA000000000000000000000000000000000000000000000000000000000000D3^M'
+Send ':200020100000000000000000000000000000000000000000000000000000000000000000B0^M'
+Send ':2000401000000000000000000000000D0D0000000000000000000000000000000000000076^M'
+Send ':1E0060100000000058020000000000000000901F000000000000000000000000000069^M'
+Send ':00000001FF'
+Wait '0>' 30
+If Timeout RestoreFailed
+:MonReset
+Send 'RS^M'
+Delay 40
+Compare @vendor 'NET232Plus'
+If Equal SetupKey
+Compare @vendor 'OEM'
+If Equal SetupKey
+Compare @vendor 'TSWA'
+If Equal SetupKey
+Compare @vendor 'MasimoPlus'
+If Equal SetupKey
+Compare @vendor 'ORR'
+If Equal SetupKey
+Compare @vendor 'EBQS'
+If Equal SetupKey
+Goto DisplayResult
+
+:SetupKey
+DONEPORT
+INITPORT COM2 9600
+PARITY NONE
+DATABITS 8
+STOPBITS 1
+SET HWFLOW NONE
+Send 'xx'
+; Init the key by entering Setup
+:TxxxKey
+Send 'x'
+Wait 'Mode' 3
+If Success EnterSetupKey
+Goto TxxxKey
+:EnterSetupKey
+Send '^M'
+Wait 'oice ' 60
+If Timeout KeyFailed
+Send '10^M'
+Wait 'Key:' 20
+If Timeout KeyFailed
+Send '1e^M'
+Wait '-' 10
+Send 'e4^M'
+Wait '-' 10
+Send '34^M'
+Wait '-' 10
+Send '80^M'
+Wait '-' 10
+Send '7f^M'
+Wait '-' 10
+Send '01^M'
+Wait '-' 10
+Send '07^M'
+Wait '-' 10
+Send '76^M'
+Wait '-' 10
+Send '4b^M'
+Wait '-' 10
+Send '8b^M'
+Wait '-' 10
+Send 'c2^M'
+Wait '-' 10
+Send '69^M'
+Wait '-' 10
+Send 'c0^M'
+Wait '-' 10
+Send 'da^M'
+Wait '-' 10
+Send '52^M'
+Wait '-' 10
+Send 'b1^M'
+Wait 'Init_APS' 30
+If Timeout KeyedAlready
+Wait 'Forced' 30
+If Timeout KeyFailed
+:KeyedAlready
+Wait 'choice' 60
+Send '8^M'
+Delay 10
+
+
+:DisplayResult
+:ClosePort
+Display '^M^J ' + @Product + ' '
+DONEPORT
+
+Display @MACaddr
+Display ' Test Passed'
+Set @printlab 'c:\cobox\production\' + @LabelBat + ' ' + @MACaddr + ' ' + @LabelStr
+Execfile @printlab
+Delay 18
+Compare @vendor 'NET232jr'
+If Equal IncJrCnt
+Compare @vendor 'NET232POE'
+If Equal IncPoeCnt
+Compare @vendor 'MasimoPOE'
+If Equal IncPoeCnt
+Compare @vendor 'Vidtronix'
+If Equal IncJrCnt
+Compare @vendor 'Infocus'
+If Equal IncJrCnt
+Compare @vendor 'NETDIRECT'
+If Equal IncNETDCnt
+Compare @vendor 'NETDIRECTMB'
+If Equal IncNETDCnt
+Compare @vendor 'NETDIRECTATT'
+If Equal IncNETDCnt
+Compare @vendor 'MasimoNETD'
+If Equal IncNETDCnt
+Compare @vendor 'TTLETH'
+If Equal IncTTLCnt
+Compare @vendor 'Rainbird'
+If Equal IncTTLCnt
+Set @CfgName 'NET232_Count'
+Goto IncDevCnt
+:IncJrCnt
+Set @CfgName 'NET232jr_Count'
+Goto IncDevCnt
+:IncPoeCnt
+Set @CfgName 'NET232POE_Count'
+Goto IncDevCnt
+:IncNETDCnt
+Compare @Product 'NETDIRECT_485'
+If Equal IncNETD485Cnt
+Compare @Product 'NETDIRECT_485_MB'
+If Equal IncNETD485Cnt
+Compare @Product 'NETDIRECT_POE'
+If Equal IncNETDPOECnt
+Compare @Product 'NETDIRECT_POE_MB'
+If Equal IncNETDPOECnt
+Compare @Product 'NETDIRECT_POE_MASIMO'
+If Equal IncNETDPOECnt
+Compare @Product 'NETDIRECT_POE_DCE_ATT'
+If Equal IncNETDPOECnt
+Compare @Product 'NETDIRECT_POE_DCE_TB'
+If Equal IncNETDPOECnt
+Set @CfgName 'ND232_Count'
+Goto IncDevCnt
+:IncNETD485Cnt
+Set @CfgName 'ND485_Count'
+Goto IncDevCnt
+:IncNETDPOECnt
+Set @CfgName 'NDPOE_Count'
+Goto IncDevCnt
+:IncTTLCnt
+Set @CfgName 'TTLETH_Count'
+:IncDevCnt
+Set CONFIGFILE c:\cobox\production\cfg\proddb.ini
+Set @numNET232Cnt 0
+READCONFIG 'GridConnect' @CfgName 0
+Set @numNET232Cnt @LastInput
+Set @numNET232Cnt @numNET232Cnt + 1
+WRITECONFIG 'GridConnect' @CfgName @numNET232Cnt
+Set CONFIGFILE c:\cobox\production\cfg\log.ini
+WRITECONFIG @Date @MACaddr @Product
+Set CONFIGFILE c:\cobox\production\cfg\test.ini
+:DoneTest
+DONEPORT
+Input 'NET232 Test Complete' 'Test Another?' 'Y'
+Compare @Lastinput 'Y'
+If Equal StartLoad
+Goto End
+:StartFailed
+Display '^M^J!! Did not detect NET232 !!'
+Goto DoneTest
+:BadVersion
+Display '^M^J!! Unrecognized version of firmware !!'
+Goto DoneTest
+:WebFailed
+Display '^M^J!! WEB Test Failed !!'
+Goto DoneTest
+:ComFailed
+Display '^M^J!! Tunnel Test Failed !!'
+Goto DoneTest
+:MacFailed
+Display '^M^J!! MAC Unknown !!'
+Goto DoneTest
+:WrongDevice
+Display '^M^J!! Not a XPort-03/04/05 Device !!'
+Goto DoneTest
+:WrongXPort
+Display '^M^J!! Not a XPort-03/04 Device !!'
+Goto DoneTest
+:NotXPDP
+Display '^M^J!! Not a XPort-Direct+ Device !!'
+Goto DoneTest
+:NotNETD
+Display '^M^J!! Not a NETDIRECT Device !!'
+Goto DoneTest
+:NotXPico
+Display '^M^J!! Not a xPico Device !!'
+Goto DoneTest
+:RestoreFailed
+Display '^M^J!! Unable to restore original config !!'
+Goto DoneTest
+:KeyFailed
+Display '^M^J!! Keying failed !!'
+Goto DoneTest
+:CfgFailed
+Display '^M^J!! Unable to read test config !!'
+Goto Leave
+:LoadFailed
+Delay 18
+Display '^M^J!!!!!!!!  LOAD FAILED  !!!!!!'
+:End
+WRITECONFIG 'GridConnect' 'Cmd' 'End'
+:Leave
+
