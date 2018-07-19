@@ -1,8 +1,9 @@
-import tftpy
+import subprocess
 
-fileToUpload = r"C:\Users\Julia\Desktop\GridConnect\LabUpdate\xPico\files\NET232pl_webm_1902.cob"
+fileToUpload = r"C:\Users\Julia\Desktop\GridConnect\LabUpdate\xPico\files\Recover\xpico_webm_2006.cob"
+ipAddress = "172.20.206.81"
+location = "WEB1"
 
-client = tftpy.TftpClient('172.20.206.81', 69)
-client.upload("WEB1", fileToUpload)
-#client.download(r"c:\cobox\production\tftp", "test")
-print("success")
+# command = ["test.bat", ipAddress, fileToUpload, location]
+command = "test.bat " + fileToUpload + " " + ipAddress + " " + location
+subprocess.Popen(command, shell = True)

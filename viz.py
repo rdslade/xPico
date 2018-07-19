@@ -133,7 +133,8 @@ class Station:
         webtest = 1
         serailTunnel = 1
         ethernetTunnel = 1
-        loadWebpage = 0
+        loadWebpage = 1
+        loadFirmware = 1
 
         self.fail = {
             "start" : 0,
@@ -142,6 +143,7 @@ class Station:
             "serialTunnel" : 0,
             "ethernetTunnel" : 0,
             "loadWebpage" : 0,
+            "loadFirmware" : 0,
             "exit" : 0
         }
 
@@ -174,9 +176,13 @@ class Station:
             self.addSubTitle("Ethernet ----> Serial Test")
             self.netToSerialTest(port = "10001")
 
-        # if loadWebpage:
-        #     print(bcolors.header_str("\nWebpage Load"))
-        #     self.loadWeb()
+        if loadWebpage:
+            self.addSubTitle("Webpage Load")
+            self.fail["loadWebpage"] = self.loadWeb()
+
+        if loadFirmware:
+            self.addSubTitle("Firmware Load")
+            self.fail["loadFirmware"] = self.loadFirmware()
 
         self.addSeperator(self.statusSpace)
         self.addSeperator(self.statusSpace)
@@ -347,9 +353,18 @@ class Station:
             addLabelToFrame(self.statusSpace, "Failed Ethernet ----> Serial test", FAILRED)
             return 1
 
+    def load(self, ip, file, location):
+        pass
+
     def loadWeb(self):
         pass
-        # UPDATE print("Loading .cob file")
+        addLabelToFrame(self.statusSpace, "Loading .cob file")
+        return 0
+
+    def loadFirmware(self):
+        pass
+        addLabelToFrame(self.statusSpace, "Loading .rom file")
+        return 0
 
 ### Read COM ports from config file and returned organized lists of ports
 def getCOMPorts():
@@ -382,7 +397,7 @@ def addTextToLabel(label, textToAdd):
     label.configure(text = label.cget("text") + textToAdd);
 
 def addLabelToFrame(frame, textToAdd, color = "#000000"):
-    add = tk.Label(frame, text = textToAdd, fg = color)
+    add = tk.Label(frame, text = textToAdd, fg = color, font = ('helvetica', 7))
     add.pack(pady = 0)
 
 
@@ -435,10 +450,10 @@ are labelled with both COM ports listed in config.txt\n \
     ### Places objects on screen in correct format
     def packObjects(self):
         self.frame.pack(side = tk.TOP)
-        self.titleLabel.pack()
-        self.instructions.pack()
+        # self.titleLabel.pack()
+        # self.instructions.pack()
         self.clearCounter.pack(pady = 5, side = tk.LEFT, padx = 15)
-        self.start.pack(side = tk.LEFT)
+        self.start.pack(side = tk.LEFT, pady = 5)
         self.buttonFrame.pack(side = tk.LEFT, padx = 20)
         devicesLoaded.pack(side = tk.RIGHT)
 
