@@ -61,13 +61,17 @@ def readSerialWord(ser_port):
         response += char
     return response
 
-def waitForResponse(serPort, timeout = 15, input = ""):
+def waitForResponse(port, timeout = 15, input = "", until = "something"):
     response = ""
     start = time.time()
     while response == "" and time.time() - start < timeout:
         if input != "":
-            serPort.write(input.encode())
-        response = readSerialWord(serPort)
+            port.write(input.encode())
+        typePort = str(type(port))
+        if "Serial" in typePort:
+            response = readSerialWord(port)
+        elif "Telnet" in typePort:
+            response = port.read_until(until.encode(), timeout).decode()
     return response
 
 def exitOnResponse(response, message, failLabel, exitSeq = ""):
@@ -135,6 +139,7 @@ class Station:
         ethernetTunnel = 1
         loadWebpage = 1
         loadFirmware = 1
+        reset = 1
 
         self.fail = {
             "start" : 0,
@@ -144,6 +149,7 @@ class Station:
             "ethernetTunnel" : 0,
             "loadWebpage" : 0,
             "loadFirmware" : 0,
+            "reset" : 0,
             "exit" : 0
         }
 
@@ -152,16 +158,18 @@ class Station:
         addLabelToFrame(self.statusSpace, "Cycle power to the NET232Plus", INTERMEDIATE)
         self.fail["start"] = self.startConfig()
 
+        currentMode = "friendly"
+
         if changeServer and self.calculateFail() == 0:
             # Make server changes
             self.addSubTitle("Server configuration stage")
-            ip_str = '172.20.206.81'
-            self.fail["changeServer"] = self.changeServer(ip_str)
+            ip_str = '172.20.206.80'
+            self.fail["changeServer"] = self.changeServer(ip_str, self.ser, currentMode)
 
         if self.calculateFail() == 0:
             # Exit config mode
             self.addSubTitle("Exit Stage")
-            self.fail["exit"] = self.exitConfig()
+            self.fail["exit"] = self.exitConfig(self.ser, currentMode)
 
         if webtest and self.calculateFail() == 0:
             self.addSubTitle("Web test stage")
@@ -176,13 +184,25 @@ class Station:
             self.addSubTitle("Ethernet ----> Serial Test")
             self.netToSerialTest(port = "10001")
 
-        if loadWebpage:
+        if loadWebpage and self.calculateFail() == 0:
             self.addSubTitle("Webpage Load")
             self.fail["loadWebpage"] = self.loadWeb()
 
-        if loadFirmware:
+        if loadFirmware and self.calculateFail() == 0:
             self.addSubTitle("Firmware Load")
             self.fail["loadFirmware"] = self.loadFirmware()
+
+        currentMode = "setup"
+        if reset and self.calculateFail() == 0:
+            self.addSubTitle("Reset module stage")
+            reset_ip = '0.0.0.0'
+            # self.ser.open()
+            self.fail["reset"] = self.resetModule(currentMode)
+
+        if self.calculateFail() == 0:
+            # Exit config mode
+            self.addSubTitle("Exit Stage")
+            self.fail["exit"] = self.exitConfig(self.tn, currentMode)
 
         self.addSeperator(self.statusSpace)
         self.addSeperator(self.statusSpace)
@@ -220,7 +240,7 @@ class Station:
         self.progressBar.start()
 
     def startConfig(self):
-        startup = waitForResponse(self.ser, 10, "x")
+        startup = waitForResponse(self.ser, 15, "x")
         fail = exitOnResponse(startup, timeoutMessage, self.statusSpace)
         # Response should be self startup screen
         if not fail:
@@ -235,36 +255,62 @@ class Station:
             self.getIPA(1)
         return fail
 
-    def makeChoice(self, choice):
-        self.ser.write((str(choice) + "\n").encode())
+    def makeChoice(self, choice, port):
+        port.write((str(choice) + "\n").encode())
 
-    def exitConfig(self):
-        self.makeChoice(9)
-        close = waitForResponse(self.ser, 3)
-        if "Parameters stored" in close:
+    def exitConfig(self, port, mode):
+        if mode == "friendly":
+            choice = 9
+            exitChoice = "Parameters stored"
+        elif mode == "setup":
+            choice = "QU"
+            exitChoice = ""
+        self.makeChoice(choice, port)
+        close = waitForResponse(port, 3)
+        if exitChoice in close:
             addLabelToFrame(self.statusSpace, "Exiting config mode...")
-            self.ser.close()
+            port.close()
             return 0
 
-    def changeServer(self, ip_str):
+
+    def changeServer(self, ip_str, port, mode):
         try:
             ipaddress.ip_address(ip_str)
         except ValueError:
             addLabelToFrame(self.statusSpace, "IP Address formatted incorrectly...Exiting", FAILRED)
-            self.exitConfig()
+            self.exitConfig(self.ser)
             return 1
         self.ipa = ip_str
         addLabelToFrame(self.statusSpace, "New IP Addr: " + self.ipa)
         ipArr = self.ipa.split(".")
-        self.makeChoice(0)
-        for i in range(0,4):
-            self.makeChoice(ipArr[i])
-            waitForResponse(self.ser, 3)
-        count = 0
-        while count < 3:
-            self.makeChoice("\r") # Just press enter, aka don't change settings
-            waitForResponse(self.ser, 3)
-            count += 1
+
+        if mode == "friendly":
+            ## This uses the human interface mode
+            self.makeChoice(0, port)
+            for i in range(0,4):
+                self.makeChoice(ipArr[i], port)
+                waitForResponse(port, 3)
+            response = ""
+            while "Your choice" not in response:
+                self.makeChoice("\r", port) # Just press enter, aka don't change settings
+                response = waitForResponse(port, 3)
+
+        elif mode == "setup":
+            setup0 = []
+            self.makeChoice("G0", port)
+            response = ""
+            while "0>" not in response:
+                response = waitForResponse(port, 1, until = "\r\n")
+                if response[0] == ":": # only parts of the setup record
+                    setup0.append(response)
+            ipIndex = 9
+            for part in ipArr:
+                newPart = hex(int(part))[-2:].upper().replace("X", "0")
+                setup0[0] = setup0[0][:ipIndex] + newPart + setup0[0][ipIndex+2:]
+                ipIndex += 2
+            self.makeChoice("S0", port)
+            for part in setup0:
+                self.makeChoice(part, port)
         return 0
 
     def getIPA(self, initial):
@@ -278,6 +324,7 @@ class Station:
                 ipaStart = section.split("IP addr ")[1]
                 potential = ipaStart.split(",")[0]
                 try:
+
                     ipaddress.ip_address(potential)
                     self.ipa = potential
                     addLabelToFrame(self.statusSpace, "IP addr: " + self.ipa)
@@ -314,7 +361,7 @@ class Station:
         self.ser.write("exit".encode())
 
         # addLabelToFrame(self.statusSpace, "Reading data from ethernet")
-        response = self.tn.read_until("exit".encode(), 10).decode()
+        response = self.tn.read_until("exit".encode()).decode()
 
         self.tn.close()
         self.ser.close()
@@ -352,6 +399,17 @@ class Station:
         else:
             addLabelToFrame(self.statusSpace, "Failed Ethernet ----> Serial test", FAILRED)
             return 1
+
+    def resetModule(self, mode):
+        HOST = self.ipa
+        port = "9999"
+        self.tn = telnetlib.Telnet(HOST, port)
+        response = self.tn.read_until("Mode".encode()).decode()
+        self.tn.write("M\n".encode())
+        next = self.tn.read_until("0>".encode(), 5).decode()
+        reset_ip = '172.20.206.81'
+        self.changeServer(reset_ip, self.tn, "setup")
+        return 0
 
     def load(self, ip, file, location):
         pass
@@ -397,7 +455,7 @@ def addTextToLabel(label, textToAdd):
     label.configure(text = label.cget("text") + textToAdd);
 
 def addLabelToFrame(frame, textToAdd, color = "#000000"):
-    add = tk.Label(frame, text = textToAdd, fg = color, font = ('helvetica', 7))
+    add = tk.Label(frame, text = textToAdd, fg = color)
     add.pack(pady = 0)
 
 
