@@ -102,8 +102,6 @@ class Station:
         self.statusSpace = tk.LabelFrame(self.frame, width = 200, height = 250)
         self.currentStatus = tk.Label(self.statusSpace, text = "", width = 25)
         self.progressBar = ttk.Progressbar(self.statusSpace, mode = 'determinate', length = 125)
-        # self.explanation = tk.Label(self.statusSpace, text = "", width = 25, pady = 10)
-        # self.explanation = tk.LabelFrame(self.frame)
     ### Loads objects into correct places
     def packObjects(self):
 
@@ -115,7 +113,6 @@ class Station:
         self.statusSpace.pack()
         self.currentStatus.pack()
         self.progressBar.pack(pady = 5)
-        # self.explanation.pack()
         self.frame.pack(side = tk.LEFT, padx = 10, fill = tk.Y)
 
 
@@ -130,7 +127,6 @@ class Station:
 
     def process(self):
         self.restartProgressBar()
-        # self.explanation.configure(text = "")
 
         start = time.time()
         changeServer = 1
@@ -196,7 +192,6 @@ class Station:
         if reset and self.calculateFail() == 0:
             self.addSubTitle("Reset module stage")
             reset_ip = '0.0.0.0'
-            # self.ser.open()
             self.fail["reset"] = self.resetModule(currentMode)
 
         if self.calculateFail() == 0:
@@ -285,7 +280,7 @@ class Station:
         ipArr = self.ipa.split(".")
 
         if mode == "friendly":
-            ## This uses the human interface mode
+            # This uses the human interface mode
             self.makeChoice(0, port)
             for i in range(0,4):
                 self.makeChoice(ipArr[i], port)
@@ -332,7 +327,6 @@ class Station:
                     pass
 
     def openConfigWebpage(self):
-        # UPDATE print("Opening webpage")
         webbrowser.open("http://" + self.ipa)
 
     def performWebTest(self):
@@ -543,7 +537,6 @@ are labelled with both COM ports listed in config.txt\n \
                 stat.createNewThread()
                 if stat.ser.isOpen() == False:
                     stat.ser.open()
-                #stat.changeAllComponents(tk.DISABLED)
 
 ### Instantiate the root window and start the Application
 if __name__ == "__main__":
