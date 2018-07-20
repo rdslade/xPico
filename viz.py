@@ -188,7 +188,7 @@ class Station:
             self.addSubTitle("Firmware Load")
             self.fail["loadFirmware"] = self.loadFirmware()
 
-        currentMode = "setup"
+        currentMode = "friendly"
         if reset and self.calculateFail() == 0:
             self.addSubTitle("Reset module stage")
             reset_ip = '0.0.0.0'
@@ -198,6 +198,7 @@ class Station:
             # Exit config mode
             self.addSubTitle("Exit Stage")
             self.fail["exit"] = self.exitConfig(self.tn, currentMode)
+
 
         self.addSeperator(self.statusSpace)
         self.addSeperator(self.statusSpace)
@@ -251,6 +252,7 @@ class Station:
         return fail
 
     def makeChoice(self, choice, port):
+        print("(Debug) Choice: " + str(choice))
         port.write((str(choice) + "\n").encode())
 
     def exitConfig(self, port, mode):
@@ -258,14 +260,19 @@ class Station:
             choice = 9
             exitChoice = "Parameters stored"
         elif mode == "setup":
-            choice = "QU"
+            choice = "G0"
             exitChoice = ""
         self.makeChoice(choice, port)
         close = waitForResponse(port, 3)
+        print(close)
+        if mode == "setup":
+            self.makeChoice("QU", port)
+            # print(waitForResponse(port, 3))
         if exitChoice in close:
             addLabelToFrame(self.statusSpace, "Exiting config mode...")
             port.close()
-            return 0
+
+        return 0
 
 
     def changeServer(self, ip_str, port, mode):
@@ -284,11 +291,11 @@ class Station:
             self.makeChoice(0, port)
             for i in range(0,4):
                 self.makeChoice(ipArr[i], port)
-                waitForResponse(port, 3)
+                waitForResponse(port, .5)
             response = ""
             while "Your choice" not in response:
                 self.makeChoice("\r", port) # Just press enter, aka don't change settings
-                response = waitForResponse(port, 3)
+                response = waitForResponse(port, .5)
 
         elif mode == "setup":
             setup0 = []
@@ -304,8 +311,12 @@ class Station:
                 setup0[0] = setup0[0][:ipIndex] + newPart + setup0[0][ipIndex+2:]
                 ipIndex += 2
             self.makeChoice("S0", port)
+            str = ""
             for part in setup0:
-                self.makeChoice(part, port)
+                str += part
+            # self.makeChoice(str, port)
+            self.tn.write(str.encode())
+            print(waitForResponse(port, until = "0>"))
         return 0
 
     def getIPA(self, initial):
@@ -399,10 +410,14 @@ class Station:
         port = "9999"
         self.tn = telnetlib.Telnet(HOST, port)
         response = self.tn.read_until("Mode".encode()).decode()
-        self.tn.write("M\n".encode())
-        next = self.tn.read_until("0>".encode(), 5).decode()
-        reset_ip = '172.20.206.81'
-        self.changeServer(reset_ip, self.tn, "setup")
+        if mode == "setup":
+            self.tn.write("M\n".encode())
+            next = self.tn.read_until("0>".encode(), 5).decode()
+        elif mode == "friendly":
+            self.tn.write("\n\r".encode())
+            next = self.tn.read_until("Your choice ?".encode(), 5).decode()
+        reset_ip = '0.0.0.0'
+        self.changeServer(reset_ip, self.tn, mode)
         return 0
 
     def load(self, ip, file, location):
