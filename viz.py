@@ -91,6 +91,17 @@ class Station:
         self.initComponents()
         self.packObjects()
 
+    class Step:
+        def __init__(self, name_, signal_, func_, fail_, args_):
+            self.name = name_
+            self.signal = signal_
+            self.func = func_
+            self.fail = fail_
+            self.args = args_
+
+        def execute(self):
+            self.func(*self.args)
+
     ### Creates the components associated with a single Station instance
     def initComponents(self):
         self.setup = tk.Frame(self.frame)
@@ -137,68 +148,31 @@ class Station:
         loadFirmware = 1
         reset = 1
 
-        self.fail = {
-            "start" : 0,
-            "changeServer" : 0,
-            "webtest" : 0,
-            "serialTunnel" : 0,
-            "ethernetTunnel" : 0,
-            "loadWebpage" : 0,
-            "loadFirmware" : 0,
-            "reset" : 0,
-            "exit" : 0
+
+        currentMode = "friendly"
+        self.steps = []
+
+        self.order = {
+            "Bootup Stage" : [1, self.startConfig, 0, []],
+            "Server Configuration Stage" : [1, self.changeServer, 0, ['172.20.206.80', "serial", currentMode]],
+            "Exit Stage" : [1, self.exitConfig, 0, ["serial", currentMode]],
+            "Web test Stage" : [1, self.performWebTest, 0, []],
+            "Serial ----> Ethernet test" : [1, self.serialToNetTest, 0, ["10001"]],
+            "Ethernet ----> Serial test" : [1, self.netToSerialTest, 0, ["10001"]],
+            "Webpage Load" : [1, self.loadWeb, 0, []],
+            "Firmware Load" : [1, self.loadFirmware, 0, []],
+            "Reset Stage" : [1, self.resetModule, 0, [currentMode]],
+            "Exit Stage*" : [1, self.exitConfig, 0, ["telnet", currentMode]]
         }
 
-        # Get initial variables and options
-        self.addSubTitle("Bootup Stage")
-        addLabelToFrame(self.statusSpace, "Cycle power to the NET232Plus", INTERMEDIATE)
-        self.fail["start"] = self.startConfig()
+        for key, value in self.order.items():
+            indv = Station.Step(key, value[0], value[1], value[2], value[3])
+            self.steps.append(indv)
 
-        currentMode = "friendly"
-
-        if changeServer and self.calculateFail() == 0:
-            # Make server changes
-            self.addSubTitle("Server configuration stage")
-            ip_str = '172.20.206.80'
-            self.fail["changeServer"] = self.changeServer(ip_str, self.ser, currentMode)
-
-        if self.calculateFail() == 0:
-            # Exit config mode
-            self.addSubTitle("Exit Stage")
-            self.fail["exit"] = self.exitConfig(self.ser, currentMode)
-
-        if webtest and self.calculateFail() == 0:
-            self.addSubTitle("Web test stage")
-            # Web test
-            self.fail["webtest"] = self.performWebTest()
-
-        if serailTunnel and self.calculateFail() == 0:
-            self.addSubTitle("Serial ----> Ethernet test")
-            self.serialToNetTest(port = "10001")
-
-        if ethernetTunnel and self.calculateFail() == 0:
-            self.addSubTitle("Ethernet ----> Serial Test")
-            self.netToSerialTest(port = "10001")
-
-        if loadWebpage and self.calculateFail() == 0:
-            self.addSubTitle("Webpage Load")
-            self.fail["loadWebpage"] = self.loadWeb()
-
-        if loadFirmware and self.calculateFail() == 0:
-            self.addSubTitle("Firmware Load")
-            self.fail["loadFirmware"] = self.loadFirmware()
-
-        currentMode = "friendly"
-        if reset and self.calculateFail() == 0:
-            self.addSubTitle("Reset module stage")
-            reset_ip = '0.0.0.0'
-            self.fail["reset"] = self.resetModule(currentMode)
-
-        if self.calculateFail() == 0:
-            # Exit config mode
-            self.addSubTitle("Exit Stage")
-            self.fail["exit"] = self.exitConfig(self.tn, currentMode)
-
+        for step in self.steps:
+            self.addSubTitle(step.name)
+            if step.signal and self.calculateFail() == 0:
+                step.execute()
 
         self.addSeperator(self.statusSpace)
         self.addSeperator(self.statusSpace)
@@ -214,8 +188,8 @@ class Station:
 
     def calculateFail(self):
         sumFail = 0
-        for key, value in self.fail.items():
-            sumFail += value
+        for step in self.steps:
+            sumFail += step.fail
         return sumFail
     ### Stops and configures progress bar to correct style
     def stopProgressBar(self, fail):
@@ -236,6 +210,7 @@ class Station:
         self.progressBar.start()
 
     def startConfig(self):
+        addLabelToFrame(self.statusSpace, "Cycle power to the device", INTERMEDIATE)
         startup = waitForResponse(self.ser, 15, "x")
         fail = exitOnResponse(startup, timeoutMessage, self.statusSpace)
         # Response should be self startup screen
@@ -256,6 +231,7 @@ class Station:
         port.write((str(choice) + "\n").encode())
 
     def exitConfig(self, port, mode):
+        port = self.getPortFromKeyWord(port)
         if mode == "friendly":
             choice = 9
             exitChoice = "Parameters stored"
@@ -276,11 +252,13 @@ class Station:
 
 
     def changeServer(self, ip_str, port, mode):
+        print("(DEBUG) PORT: " + port)
+        port = self.getPortFromKeyWord(port)
         try:
             ipaddress.ip_address(ip_str)
         except ValueError:
             addLabelToFrame(self.statusSpace, "IP Address formatted incorrectly...Exiting", FAILRED)
-            self.exitConfig(self.ser)
+            self.exitConfig(port)
             return 1
         self.ipa = ip_str
         addLabelToFrame(self.statusSpace, "New IP Addr: " + self.ipa)
@@ -330,7 +308,6 @@ class Station:
                 ipaStart = section.split("IP addr ")[1]
                 potential = ipaStart.split(",")[0]
                 try:
-
                     ipaddress.ip_address(potential)
                     self.ipa = potential
                     addLabelToFrame(self.statusSpace, "IP addr: " + self.ipa)
@@ -417,7 +394,7 @@ class Station:
             self.tn.write("\n\r".encode())
             next = self.tn.read_until("Your choice ?".encode(), 5).decode()
         reset_ip = '0.0.0.0'
-        self.changeServer(reset_ip, self.tn, mode)
+        self.changeServer(reset_ip, "telnet", mode)
         return 0
 
     def load(self, ip, file, location):
@@ -432,6 +409,12 @@ class Station:
         pass
         addLabelToFrame(self.statusSpace, "Loading .rom file")
         return 0
+
+    def getPortFromKeyWord(self, keyword):
+        if keyword == "serial":
+            return self.ser
+        elif keyword == "telnet":
+            return self.tn
 
 ### Read COM ports from config file and returned organized lists of ports
 def getCOMPorts():
