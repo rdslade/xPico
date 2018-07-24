@@ -24,30 +24,15 @@ OKGREEN = "#00ff00"
 INTERMEDIATE = "#9a4ce8"
 FAILRED = "#ff0000"
 STATUSBLUE = "#0000ff"
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
-    def success_str(str):
-        return bcolors.OKGREEN + str + bcolors.ENDC
+class Device:
+    def __init__(self, web_files_, firmware_files_):
+        self.web_files = web_files_
+        self.firmware_files = firmware_files_
 
-    def fail_str(str):
-        return bcolors.FAIL + str + bcolors.ENDC
-
-    def header_str(str):
-        return bcolors.HEADER + str + bcolors.ENDC
-
-    def intermediate_str(str):
-        return bcolors.OKBLUE + str + bcolors.ENDC
-
-    def underline_str(str):
-        return bcolors.UNDERLINE + str + bcolors.ENDC
+deviceOptions = {
+    "NET232Plus" : Device(dict(X6 = "somefile.rom"), dict(WEB1 = "somefile.cob"))
+}
 
 timeoutMessage = "TIMED OUT WAITING FOR xPICO...EXITING"
 
@@ -227,7 +212,6 @@ class Station:
         return fail
 
     def makeChoice(self, choice, port):
-        print("(Debug) Choice: " + str(choice))
         port.write((str(choice) + "\n").encode())
 
     def exitConfig(self, port, mode):
@@ -240,10 +224,8 @@ class Station:
             exitChoice = ""
         self.makeChoice(choice, port)
         close = waitForResponse(port, 3)
-        print(close)
         if mode == "setup":
             self.makeChoice("QU", port)
-            # print(waitForResponse(port, 3))
         if exitChoice in close:
             addLabelToFrame(self.statusSpace, "Exiting config mode...")
             port.close()
@@ -252,7 +234,6 @@ class Station:
 
 
     def changeServer(self, ip_str, port, mode):
-        print("(DEBUG) PORT: " + port)
         port = self.getPortFromKeyWord(port)
         try:
             ipaddress.ip_address(ip_str)
@@ -294,7 +275,6 @@ class Station:
                 str += part
             # self.makeChoice(str, port)
             self.tn.write(str.encode())
-            print(waitForResponse(port, until = "0>"))
         return 0
 
     def getIPA(self, initial):
@@ -467,7 +447,7 @@ def updateDevicesLoaded(*args):
 
 class Application:
     def __init__(self, parent):
-        global loaded, devicesLoaded
+        global loaded, devicesLoaded, deviceChosen
         loaded = IntVar()
         loaded.set(getNumDevicesLoaded())
         loaded.trace("w", updateDevicesLoaded)
@@ -493,6 +473,22 @@ are labelled with both COM ports listed in config.txt\n \
         self.buttonFrame = tk.Frame(self.frame)
         self.clearCounter = tk.Button(self.buttonFrame, text = "Clear Counter", width = 10, bg = gridColor, height = 2, command = clearDevCounter)
         self.start = tk.Button(self.buttonFrame, text = "START", width = 22, bg = gridColor, height = 3, command = self.startUpload)
+
+        OPTIONS = []
+        for option in deviceOptions:
+            OPTIONS.append(option)
+        print(OPTIONS)
+
+        def callback(*args):
+            device_details = deviceOptions[deviceChosen.get()]
+            print(device_details.web_files)
+            print(device_details.firmware_files)
+
+        deviceChosen = StringVar(self.parent)
+        deviceChosen.set(OPTIONS[0]) # default value
+        deviceChosen.trace("w", callback)
+        self.optionMenu = tk.OptionMenu(self.frame, deviceChosen, *OPTIONS)
+
         self.packObjects()
         for device in devices:
             self.stations.append(Station(root, device))
@@ -506,6 +502,7 @@ are labelled with both COM ports listed in config.txt\n \
         self.start.pack(side = tk.LEFT, pady = 5)
         self.buttonFrame.pack(side = tk.LEFT, padx = 20)
         devicesLoaded.pack(side = tk.RIGHT)
+        self.optionMenu.pack(side = tk.RIGHT, padx = 20)
 
 
     ### Create and "pack" menu for main root window
