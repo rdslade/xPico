@@ -126,13 +126,14 @@ class Station:
         self.restartProgressBar()
 
         start = time.time()
-        changeServer = 1
-        webtest = 1
-        serialTunnel = 1
-        ethernetTunnel = 1
-        loadWebpage = 1
-        loadFirmware = 1
-        reset = 1
+        changeServer = 0
+        webtest = 0
+        serialTunnel = 0
+        ethernetTunnel = 0
+        loadWebpage = 0
+        loadFirmware = 0
+        reset = 0
+        log = 1
 
 
         currentMode = "friendly"
@@ -148,7 +149,8 @@ class Station:
             "Webpage Load" : [loadWebpage, self.load, 0, ["web"]],
             "Firmware Load" : [loadFirmware, self.load, 0, ["firmware"]],
             "Reset Stage" : [reset, self.resetModule, 0, [currentMode]],
-            "Exit Stage*" : [reset, self.exitConfig, 0, ["telnet", currentMode]]
+            "Exit Stage*" : [reset, self.exitConfig, 0, ["telnet", currentMode]],
+            "Logging Stage" : [log, self.logRun, 0, []]
         }
 
         for key, value in self.order.items():
@@ -392,6 +394,18 @@ class Station:
             tftpCommand = "loadFile.sh " + self.ipa + " " + file + " " + location + " " + type
             totalFileTransferErrors += subprocess.call(tftpCommand, shell = True)
         return totalFileTransferErrors
+
+    def logRun(self):
+        full_date = str(datetime.datetime.now())
+        log_str = "|" + full_date + " " + self.mac + " " + deviceChosen.get().ljust(19) + " "
+        if not self.calculateFail():
+            log_str += "SUCCESS |\n"
+        else:
+            log_str += "  FAIL  |\n"
+        log_filename = "log.txt"
+        with open(log_filename, 'a+',encoding='utf-8') as log:
+            log.write(log_str)
+            log.close()
 
     def getPortFromKeyWord(self, keyword):
         if keyword == "serial":
