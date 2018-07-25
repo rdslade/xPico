@@ -31,7 +31,8 @@ class Device:
         self.firmware_files = firmware_files_
 
 deviceOptions = {
-    "NET232Plus" : Device(firmware_files_ = dict(X6 = r"files/NET232pl_6807GC.rom"), web_files_ = dict(WEB1 = r"files\NET232pl_webm_1902.cob"))
+    "NET232Plus" : Device(firmware_files_ = dict(X6 = r"files/NET232pl_6807GC.rom"), web_files_ = dict(WEB1 = r"files\NET232pl_webm_1902.cob")),
+    "NET232PlusRecover" : Device(firmware_files_ = dict(X6 = r"files/Recover/xpico_61001.rom"), web_files_ = dict(WEB1 = r"files/Recover/xpico_webm_2006.cob"))
 }
 
 timeoutMessage = "TIMED OUT WAITING FOR xPICO...EXITING"
@@ -126,9 +127,9 @@ class Station:
 
         start = time.time()
         changeServer = 1
-        webtest = 0
-        serialTunnel = 0
-        ethernetTunnel = 0
+        webtest = 1
+        serialTunnel = 1
+        ethernetTunnel = 1
         loadWebpage = 1
         loadFirmware = 1
         reset = 1
@@ -223,14 +224,16 @@ class Station:
             choice = "G0"
             exitChoice = ""
         self.makeChoice(choice, port)
-        close = waitForResponse(port, 3)
-        if mode == "setup":
-            self.makeChoice("QU", port)
+        close = ""
+        startTime = time.time()
+        while exitChoice not in close and time.time() - startTime > 5:
+            close = waitForResponse(port, 1)
+        addLabelToFrame(self.statusSpace, "Exiting config mode...")
+        port.close()
         if exitChoice in close:
-            addLabelToFrame(self.statusSpace, "Exiting config mode...")
-            port.close()
-
-        return 0
+            return 0
+        else:
+            return 1
 
 
     def changeServer(self, ip_str, port, mode):
@@ -384,10 +387,11 @@ class Station:
         elif type == "firmware":
             dict = device.firmware_files
         addLabelToFrame(self.statusSpace, "Opening a shell to load " + type + " files")
+        totalFileTransferErrors = 0
         for location, file in dict.items():
-            tftpCommand = "test.sh " + self.ipa + " " + file + " " + location + " " + type
-            subprocess.call(tftpCommand, shell = True)
-        return 0
+            tftpCommand = "loadFile.sh " + self.ipa + " " + file + " " + location + " " + type
+            totalFileTransferErrors += subprocess.call(tftpCommand, shell = True)
+        return totalFileTransferErrors
 
     def getPortFromKeyWord(self, keyword):
         if keyword == "serial":
