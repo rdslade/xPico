@@ -31,7 +31,7 @@ class Device:
         self.firmware_files = firmware_files_
 
 deviceOptions = {
-    "NET232Plus" : Device(dict(X6 = "somefile.rom"), dict(WEB1 = "somefile.cob"))
+    "NET232Plus" : Device(firmware_files_ = dict(X6 = r"files/NET232pl_6807GC.rom"), web_files_ = dict(WEB1 = r"files\NET232pl_webm_1902.cob"))
 }
 
 timeoutMessage = "TIMED OUT WAITING FOR xPICO...EXITING"
@@ -126,9 +126,9 @@ class Station:
 
         start = time.time()
         changeServer = 1
-        webtest = 1
-        serailTunnel = 1
-        ethernetTunnel = 1
+        webtest = 0
+        serialTunnel = 0
+        ethernetTunnel = 0
         loadWebpage = 1
         loadFirmware = 1
         reset = 1
@@ -139,15 +139,15 @@ class Station:
 
         self.order = {
             "Bootup Stage" : [1, self.startConfig, 0, []],
-            "Server Configuration Stage" : [1, self.changeServer, 0, ['172.20.206.80', "serial", currentMode]],
+            "Server Configuration Stage" : [changeServer, self.changeServer, 0, ['172.20.206.80', "serial", currentMode]],
             "Exit Stage" : [1, self.exitConfig, 0, ["serial", currentMode]],
-            "Web test Stage" : [1, self.performWebTest, 0, []],
-            "Serial ----> Ethernet test" : [1, self.serialToNetTest, 0, ["10001"]],
-            "Ethernet ----> Serial test" : [1, self.netToSerialTest, 0, ["10001"]],
-            "Webpage Load" : [1, self.loadWeb, 0, []],
-            "Firmware Load" : [1, self.loadFirmware, 0, []],
-            "Reset Stage" : [1, self.resetModule, 0, [currentMode]],
-            "Exit Stage*" : [1, self.exitConfig, 0, ["telnet", currentMode]]
+            "Web test Stage" : [webtest, self.performWebTest, 0, []],
+            "Serial ----> Ethernet test" : [serialTunnel, self.serialToNetTest, 0, ["10001"]],
+            "Ethernet ----> Serial test" : [ethernetTunnel, self.netToSerialTest, 0, ["10001"]],
+            "Webpage Load" : [loadWebpage, self.load, 0, ["web"]],
+            "Firmware Load" : [loadFirmware, self.load, 0, ["firmware"]],
+            "Reset Stage" : [reset, self.resetModule, 0, [currentMode]],
+            "Exit Stage*" : [reset, self.exitConfig, 0, ["telnet", currentMode]]
         }
 
         for key, value in self.order.items():
@@ -155,8 +155,8 @@ class Station:
             self.steps.append(indv)
 
         for step in self.steps:
-            self.addSubTitle(step.name)
             if step.signal and self.calculateFail() == 0:
+                self.addSubTitle(step.name)
                 step.execute()
 
         self.addSeperator(self.statusSpace)
@@ -377,17 +377,16 @@ class Station:
         self.changeServer(reset_ip, "telnet", mode)
         return 0
 
-    def load(self, ip, file, location):
-        pass
-
-    def loadWeb(self):
-        pass
-        addLabelToFrame(self.statusSpace, "Loading .cob file")
-        return 0
-
-    def loadFirmware(self):
-        pass
-        addLabelToFrame(self.statusSpace, "Loading .rom file")
+    def load(self, type):
+        device = deviceOptions[deviceChosen.get()]
+        if type == "web":
+            dict = device.web_files
+        elif type == "firmware":
+            dict = device.firmware_files
+        addLabelToFrame(self.statusSpace, "Opening a shell to load " + type + " files")
+        for location, file in dict.items():
+            tftpCommand = "test.sh " + self.ipa + " " + file + " " + location + " " + type
+            subprocess.call(tftpCommand, shell = True)
         return 0
 
     def getPortFromKeyWord(self, keyword):
@@ -477,12 +476,12 @@ are labelled with both COM ports listed in config.txt\n \
         OPTIONS = []
         for option in deviceOptions:
             OPTIONS.append(option)
-        print(OPTIONS)
+        # print(OPTIONS)
 
         def callback(*args):
             device_details = deviceOptions[deviceChosen.get()]
-            print(device_details.web_files)
-            print(device_details.firmware_files)
+            # print(device_details.web_files)
+            # print(device_details.firmware_files)
 
         deviceChosen = StringVar(self.parent)
         deviceChosen.set(OPTIONS[0]) # default value
