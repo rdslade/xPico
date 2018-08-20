@@ -12,7 +12,6 @@ import time
 import datetime
 import threading
 from multiprocessing import Queue, Process
-import re
 import ipaddress
 import telnetlib
 import urllib.request
@@ -68,10 +67,11 @@ def exitOnResponse(response, message, failLabel, exitSeq = ""):
         return 0
 
 class Station:
-    def __init__(self, parent_, com_):
+    def __init__(self, parent_, com_, stat_num):
         self.com = com_
         self.ser = serial.Serial(self.com, baudrate = 9600, timeout = .1)
         self.mac = self.ipa = ""
+        self.programIPA = "172.20.206.8" + str(stat_num)
         self.thread = threading.Thread(target = self.process)
         self.frame = tk.Frame(parent_)
         self.initComponents()
@@ -126,6 +126,8 @@ class Station:
         self.restartProgressBar()
 
         start = time.time()
+
+        ### Change the settings to perform certain actions here
         changeServer = 0
         webtest = 0
         serialTunnel = 0
@@ -141,7 +143,7 @@ class Station:
 
         self.order = {
             "Bootup Stage" : [1, self.startConfig, 0, []],
-            "Server Configuration Stage" : [changeServer, self.changeServer, 0, ['172.20.206.80', "serial", currentMode]],
+            "Server Configuration Stage" : [changeServer, self.changeServer, 0, [self.programIPA, "serial", currentMode]],
             "Exit Stage" : [1, self.exitConfig, 0, ["serial", currentMode]],
             "Web test Stage" : [webtest, self.performWebTest, 0, []],
             "Serial ----> Ethernet test" : [serialTunnel, self.serialToNetTest, 0, ["10001"]],
@@ -507,8 +509,8 @@ are labelled with both COM ports listed in config.txt\n \
         self.optionMenu = tk.OptionMenu(self.frame, deviceChosen, *OPTIONS)
 
         self.packObjects()
-        for device in devices:
-            self.stations.append(Station(root, device))
+        for d in range(0, len(devices)):
+            self.stations.append(Station(root, devices[d], d))
 
     ### Places objects on screen in correct format
     def packObjects(self):

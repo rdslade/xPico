@@ -1,2 +1,2 @@
-These are Instructions
-COM24
+One port per line
+COM5
