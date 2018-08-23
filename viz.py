@@ -69,7 +69,11 @@ def exitOnResponse(response, message, failLabel, exitSeq = ""):
 class Station:
     def __init__(self, parent_, com_, stat_num):
         self.com = com_
-        self.ser = serial.Serial(self.com, baudrate = 9600, timeout = .1)
+        try:
+            self.ser = serial.Serial(self.com, baudrate = 9600, timeout = .1)
+        except serial.SerialException as e:
+            messagebox.showinfo("Serial Error", "Cannot open " + self.com + "\nPlease kill and restart the program")
+            exit(1);
         self.mac = self.ipa = ""
         self.programIPA = "172.20.206.8" + str(stat_num)
         self.thread = threading.Thread(target = self.process)
@@ -86,7 +90,7 @@ class Station:
             self.args = args_
 
         def execute(self):
-            self.func(*self.args)
+            self.fail = self.func(*self.args)
 
     ### Creates the components associated with a single Station instance
     def initComponents(self):
@@ -128,13 +132,13 @@ class Station:
         start = time.time()
 
         ### Change the settings to perform certain actions here
-        changeServer = 0
-        webtest = 0
-        serialTunnel = 0
-        ethernetTunnel = 0
-        loadWebpage = 0
-        loadFirmware = 0
-        reset = 0
+        changeServer = 1
+        webtest = 1
+        serialTunnel = 1
+        ethernetTunnel = 1
+        loadWebpage = 1
+        loadFirmware = 1
+        reset = 1
         log = 1
 
 
@@ -230,7 +234,7 @@ class Station:
         self.makeChoice(choice, port)
         close = ""
         startTime = time.time()
-        while exitChoice not in close and time.time() - startTime > 5:
+        while exitChoice not in close and time.time() - startTime < 5:
             close = waitForResponse(port, 1)
         addLabelToFrame(self.statusSpace, "Exiting config mode...")
         port.close()
