@@ -388,16 +388,16 @@ class Station:
         self.changeServer(reset_ip, "telnet", mode)
         return 0
 
-    def load(self, type):
+    def load(self, typeLoad):
         device = deviceOptions[deviceChosen.get()]
-        if type == "web":
+        if typeLoad == "web":
             dict = device.web_files
-        elif type == "firmware":
+        elif typeLoad == "firmware":
             dict = device.firmware_files
-        addLabelToFrame(self.statusSpace, "Opening a shell to load " + type + " files")
+        addLabelToFrame(self.statusSpace, "Opening a shell to load " + typeLoad + " files")
         totalFileTransferErrors = 0
         for location, file in dict.items():
-            tftpCommand = "loadFile.sh " + self.ipa + " " + file + " " + location + " " + type
+            tftpCommand = "loadFile.sh " + self.ipa + " " + file + " " + location + " " + typeLoad
             totalFileTransferErrors += subprocess.call(tftpCommand, shell = True)
         return totalFileTransferErrors
 
@@ -411,7 +411,9 @@ class Station:
         log_filename = "log.txt"
         with open(log_filename, 'a+',encoding='utf-8') as log:
             log.write(log_str)
+            addLabelToFrame(self.statusSpace, "Logged " + self.mac)
             log.close()
+        return 0
 
     def getPortFromKeyWord(self, keyword):
         if keyword == "serial":

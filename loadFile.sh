@@ -1,7 +1,7 @@
 ip=$1
 file=$2
 location=$3
-loadType = $4
+loadType=$4
 
 echo "Loading " $loadType " files"
 
