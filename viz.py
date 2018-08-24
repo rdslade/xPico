@@ -377,7 +377,15 @@ class Station:
     def resetModule(self, mode):
         HOST = self.ipa
         port = "9999"
-        self.tn = telnetlib.Telnet(HOST, port)
+        failTelnetCounter = 0;
+        while failTelnetCounter < 3:
+            try:
+                self.tn = telnetlib.Telnet(HOST, port)
+                break
+            except ConnectionRefusedError as e:
+                failTelnetCounter += 1
+                print(e)
+                print("Retrying telnet connection")
         response = self.tn.read_until("Mode".encode()).decode()
         if mode == "setup":
             self.tn.write("M\n".encode())
