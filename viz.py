@@ -75,7 +75,8 @@ class Station:
             messagebox.showinfo("Serial Error", "Cannot open " + self.com + "\nPlease kill and restart the program")
             exit(1);
         self.mac = self.ipa = ""
-        self.programIPA = "172.20.206.8" + str(stat_num)
+        endOfIPA = 80 + stat_num;
+        self.programIPA = "172.20.206." + str(endOfIPA)
         self.thread = threading.Thread(target = self.process)
         self.frame = tk.Frame(parent_)
         self.initComponents()
